@@ -1,46 +1,28 @@
-name: Build artifact
+name: Debug build
 
-# Manual only. Upstream has no file with this name, so a fork sync
-# never has anything to overwrite or delete here.
 on:
   workflow_dispatch:
-    inputs:
-      ref:
-        description: Branch, tag or SHA to build
-        default: main
-        required: false
-
-permissions:
-  contents: read
-
-env:
-  CARGO_TERM_COLOR: always
 
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v5
-        with:
-          ref: ${{ inputs.ref }}
-      # The version and components pinned in rust-toolchain.toml.
-      - run: rustup toolchain install
+      - uses: actions/checkout@v4
+
+      - name: Install pinned Rust toolchain
+        run: rustup show
+
       - uses: Swatinem/rust-cache@v2
-      - name: Build release
+
+      - name: Build (diag profile)
         run: cargo build --profile diag -p victory --features diagnostics
-      - name: Collect binaries
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path dist | Out-Null
-          Get-ChildItem target/release -File -Filter *.exe |
-            Where-Object { $_.Name -ne 'xtask.exe' } |
-            Copy-Item -Destination dist
-          Get-ChildItem dist
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ztrx-windows-${{ github.sha }}
-          path: dist/*
+          name: ztrx-debug-windows-x64
+          path: |
+            target/diag/victory.exe
+            target/diag/victory.pdb
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 14
