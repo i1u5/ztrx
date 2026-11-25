@@ -28,7 +28,7 @@ jobs:
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@v2
       - name: Build release
-        run: cargo build --workspace --release --locked
+        run: cargo build --release -p victory
       - name: Collect binaries
         shell: pwsh
         run: |
